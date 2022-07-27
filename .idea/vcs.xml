@@ -2,5 +2,8 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/limitless-hollows-40427" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/python-getting-started" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/python-getting-started/limitless-hollows-40427" vcs="Git" />
   </component>
 </project>
