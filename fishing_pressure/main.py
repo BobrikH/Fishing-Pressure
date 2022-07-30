@@ -1,19 +1,22 @@
 from deta import Deta
-from dash import Dash, dcc, html, Input, Output, dash
+from dash import Dash, dcc, html, Input, Output
 import dash_core_components as dcc
 import dash_html_components as html
 import sqlite3
 import requests
-from datetime import date,datetime,time
+from datetime import date, datetime, time
 from threading import Thread
 import time
+from flask import Flask
 DATABASE = "DataBase.db"
 APPID = "P2SU64HWKZ3qC"
-password = "1661a35ab21825a49827ddf2461c4a81"  #hashlib.md5("kjfb7959")
+password = "1661a35ab21825a49827ddf2461c4a81"  # hashlib.md5("kjfb7959")
 uuid = "f7e6c85504ce6e82442c770f7c8606f0"
 user_date = str(date.today())
 deta = Deta("c0zq6itv_znRTHaekCqBJYRFx3gMNypZMWyTUb7Rf")
-def insert_varible_into_table(p,d,t):
+
+
+def insert_varible_into_table(p, d, t):
     try:
         sqlite_connection = sqlite3.connect('DataBase.db')
         cursor = sqlite_connection.cursor()
@@ -32,21 +35,26 @@ def insert_varible_into_table(p,d,t):
         if sqlite_connection:
             sqlite_connection.close()
 
-def getPressure(key,uid):
+
+def getPressure(key, uid):
     r = requests.get(f"http://narodmon.ru/api/sensorsOnDevice?devices=2318&uuid={uid}&api_key={key}&lang=ru")
     pressureRaw = r.json()
     pressure = float(pressureRaw["devices"][0]["sensors"][0]["value"])
     return pressure
 
+
 def PressureIntoDB(timer):
-    while 1==1:
+    while 1 == 1:
         currentTime = str(datetime.now().time())[:5]
         currentDate = datetime.now().date()
-        p = getPressure(APPID,uuid)
-        insert_varible_into_table(p,currentDate,currentTime)
+        p = getPressure(APPID, uuid)
+        insert_varible_into_table(p, currentDate, currentTime)
         time.sleep(timer)
+
+
 th_pressure = Thread(target=PressureIntoDB, args=(3602,))
 th_pressure.start()
+
 
 def read_limited_rows(row_size):
     try:
@@ -65,6 +73,7 @@ def read_limited_rows(row_size):
             sqlite_connection.close()
     return records
 
+
 def read_sqlite_table():
     try:
         sqlite_connection = sqlite3.connect('DataBase.db')
@@ -82,22 +91,26 @@ def read_sqlite_table():
             sqlite_connection.close()
     return records
 
-def drawInfo(records,default_date):
+
+def drawInfo(records, default_date):
     res = []
     for i in records:
         if i[1] == default_date:
-            res.append((i[0],i[2]))
+            res.append((i[0], i[2]))
         if default_date == 0:
             res.append((i[0], i[2]))
     return res
 
-app = dash.Dash(__name__)
-server = app.server
+
+server = Flask(__name__)
+app = Dash(server=server)
+
+
 def draw():
-    while 1==1:
+    while 1 == 1:
         rawData = read_sqlite_table()
         rawWeekData = read_limited_rows(336)
-        weekData = drawInfo(rawWeekData,0)
+        weekData = drawInfo(rawWeekData, 0)
         week_y = []
         week_x = []
         dates = set()
@@ -110,25 +123,25 @@ def draw():
         app.layout = html.Div(
             children=[
                 dcc.Graph(
-                    id = "graf",
+                    id="graf",
 
                     style={
                         "width": "500px",
                     }
                 ),
 
-                html.Div(children="Дата", className="menu-title",id = "menu-title"),
+                html.Div(children="Дата", className="menu-title", id="menu-title"),
                 dcc.Dropdown(
                     id="date-filter",
                     options=[
                         {"label": dat, "value": dat}
                         for dat in dates
                     ],
-                    value = date.today(),
+                    value=date.today(),
                     clearable=False,
                     className="dropdown",
                     style={
-                        "width" : "500px"
+                        "width": "500px"
                     }
                 ),
                 dcc.Graph(
@@ -150,8 +163,12 @@ def draw():
                 ),
             ]
         )
-th_draw = Thread(target = draw, args=() )
+
+
+th_draw = Thread(target=draw, args=())
 th_draw.start()
+
+
 @app.callback(
     Output('graf', 'figure'),
     Input('date-filter', 'value')
@@ -159,7 +176,7 @@ th_draw.start()
 def update_output(value):
     user_date = value
     rawData = read_sqlite_table()
-    data = drawInfo(rawData,value)
+    data = drawInfo(rawData, value)
     abcis = []
     ordinat = []
     dates = set()
